@@ -69,6 +69,7 @@ Example:
       - use-id.ts
     - utils/
       - pdf-export.utils.ts
+      - constants.ts
     - types/
       - settings.ts
       - definitions.ts
