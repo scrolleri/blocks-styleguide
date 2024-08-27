@@ -57,13 +57,14 @@ Example:
     - block/
       - pdf-export.block.ts
       - pdf-export.hooks.ts
+      - pdf-export.settings.ts
       - pdf-export.ts
     - components/
       - ui/
       - overlays/
       - elements/
-      - or any project specific general folders
-
+      - layouts/
+      - project specific general folders
     - hooks/
       - use-id.ts
     - utils/
