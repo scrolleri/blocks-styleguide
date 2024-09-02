@@ -4,7 +4,7 @@ _A mostly reasonable approach to Frontify Blocks, JavaScript, and TypeScript._
 
 ## Git
 
-We have one main branch and we open pull requets for changes to the blocks.
+We have one main branch and we open pull requests for changes to the blocks.
 
 ## Branch naming
 
@@ -20,9 +20,9 @@ Categories:
 
 ## State management
 
-We have been using Recoil for state management but are considering evaluating XState to determine which works better for our use cases.
+We have been using Recoil for state management but are considering evaluating Zustand and XState to determine which works better for our use cases.
 
-The key reason for considering XState is that Recoil team has stopped developing it. Additionally, XState's useSelector hook can help avoid unnecessary re-renders.
+The key reason for considering Zustand/XState is that the Recoil team has stopped developing it. Additionally, XState's useSelector hook can help avoid unnecessary re-renders.
 
 ## Folder naming
 
