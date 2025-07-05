@@ -1,10 +1,10 @@
-# Scrolleri JavaScript Style Guide
+# JavaScript Style Guide
 
 _A mostly reasonable approach to Frontify Blocks, JavaScript, and TypeScript._
 
 ## Git
 
-We have one main branch and we open pull requests for changes to the blocks.
+We have one main branch, and we open pull requests for changes to the blocks.
 
 ## Branch naming
 
@@ -64,7 +64,7 @@ Example:
       - overlays/
       - elements/
       - layouts/
-      - project specific general folders
+      - project-specific general folders
     - hooks/
       - use-id.ts
     - utils/
@@ -118,7 +118,7 @@ const HttpStatus = {
 type Nullable<T> = T | null
 ```
 
-Using type of type or enum is the developer decision based on their feeling about the use case.
+Using type or enum is the developer's decision based on their feeling about the use case.
 
 ### Type suffix
 
