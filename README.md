@@ -4,25 +4,21 @@ _A mostly reasonable approach to Frontify Blocks, JavaScript, and TypeScript._
 
 ## Git
 
-We have one main branch, and we open pull requests for changes to the blocks.
+We follow linear git branching with a single main branch. All changes are made through pull requests.
 
 ## Branch naming
 
-An example of a good branch naming `[category]/[block-name]-[objective]` or if it's more general `[category]/[objective]`
+Format: `[type]/[description]`
 
-Categories:
+Examples:
 
-* chore
-* fix
-* feature
-* renovate
-* poc
+- `feat/add-dark-mode`
+- `fix/grid-alignment`
+- `chore/update-dependencies`
 
 ## State management
 
-We have been using Recoil for state management but are considering evaluating Zustand and XState to determine which works better for our use cases.
-
-The key reason for considering Zustand/XState is that the Recoil team has stopped developing it. Additionally, XState's useSelector hook can help avoid unnecessary re-renders.
+We use Zustand for state management. Zustand provides a lightweight, TypeScript-friendly solution with minimal boilerplate and excellent performance characteristics.
 
 ## Folder naming
 
@@ -44,36 +40,123 @@ Example:
 
 ## Folder structure
 
+### Standard Block Structure
+
 ```md
-- packages
-  - shared
-    - components
-    - utils
+- packages/
+  - shared/
+    - components/
+    - utils/
       - number.ts
       - dom.ts
       - string.ts
-  
-  - pdf-export/
+
+  - [block-name]/
+    - src/
+      - block/
+        - [block-name].block.tsx        # Main block component
+        - [block-name].tsx               # Block logic
+        - [block-name].module.css        # Block styles
+      - components/                      # UI components
+        - ui/                           # Generic UI components
+        - overlays/                     # Modal/overlay components
+        - elements/                     # Basic building blocks
+        - layouts/                      # Layout components
+        - [feature-name]/               # Feature-specific components
+          - [component].tsx
+          - [component].module.css
+          - index.ts
+      - contexts/                       # React contexts for state sharing
+        - [context-name].context.ts
+        - [context-name].context-provider.tsx
+      - hooks/                          # Custom React hooks
+        - use-[functionality].ts
+      - settings/                       # Block configuration
+        - settings.ts                   # Settings definition
+        - settings.hooks.ts             # Settings-related hooks
+        - types.ts                      # Settings types
+        - enums.ts                      # Settings enums
+        - index.ts                      # Exports
+      - stores/                         # State management (Zustand)
+        - [feature].store.ts
+      - types/                          # TypeScript definitions
+        - definitions.ts                # General type definitions
+        - enum.ts                       # Shared enums
+        - index.ts                      # Type exports
+      - utils/                          # Utility functions
+        - [domain]-utils.ts             # Domain-specific utilities
+        - constants.ts                  # Constants
+        - defaults.ts                   # Default values
+        - enums.ts                      # Utility enums
+      - index.ts                        # Main export
+      - global.d.ts                     # Global type declarations
+```
+
+### Directory Purpose Guide
+
+| Directory | Purpose | Examples |
+|-----------|---------|----------|
+| `block/` | Core block implementation | Main component, settings, exports |
+| `components/` | Reusable UI components | Buttons, cards, modals, forms |
+| `contexts/` | React context providers | Theme context, user context |
+| `hooks/` | Custom React hooks | `useBreakpoint`, `useGridConfig` |
+| `settings/` | Block configuration & settings | Settings schema, validations |
+| `stores/` | State management | Zustand stores |
+| `types/` | TypeScript type definitions | Interfaces, types, enums |
+| `utils/` | Helper functions & utilities | Formatters, validators, calculations |
+
+### Examples
+
+#### PDF Export Block
+
+```md
+- pdf-export/
+  - src/
     - block/
-      - pdf-export.block.ts
+      - pdf-export.block.tsx
       - pdf-export.hooks.ts
       - pdf-export.settings.ts
-      - pdf-export.ts
     - components/
-      - ui/
-      - overlays/
-      - elements/
-      - layouts/
-      - project-specific general folders
-    - hooks/
-      - use-id.ts
+      - export-button/
+      - preview-modal/
     - utils/
-      - pdf-export.utils.ts
-      - constants.ts
-    - types/
-      - settings.ts
-      - definitions.ts
-    index.ts
+      - pdf-generation.ts
+      - export-config.ts
+```
+
+#### Layout Grid Block
+
+```md
+- layout-grid/
+  - src/
+    - block/
+      - layout-grid.block.tsx
+    - components/
+      - tile/
+      - grid-background/
+      - breakpoint-toolbar/
+    - hooks/
+      - use-grid-config.ts
+      - use-breakpoint.ts
+    - stores/
+      - tiles.store.ts
+```
+
+#### Gallery Block
+
+```md
+- gallery/
+  - src/
+    - block/
+      - gallery.block.tsx
+    - components/
+      - image-viewer/
+      - thumbnail-grid/
+      - lightbox/
+    - hooks/
+      - use-image-loader.ts
+    - utils/
+      - image-optimization.ts
 ```
   
 ## Variable naming conventions
@@ -166,18 +249,132 @@ interface ArticleCreateDto {
 }
 
 // article-service.ts
-class ArticleService {
-  static async findAll() {
-    const {data} = await api.get<Article[]>('articles')
-    return data
+// Generic API client with better error handling and features
+class ApiClient {
+  private abortControllers = new Map<string, AbortController>()
+
+  async request<T>(
+    method: string,
+    endpoint: string,
+    options?: {
+      params?: Record<string, any>
+      body?: any
+      signal?: AbortSignal
+      retries?: number
+      cache?: boolean
+    }
+  ): Promise<T> {
+    const retries = options?.retries ?? 0
+
+    try {
+      const response = await api[method.toLowerCase()](endpoint, {
+        ...options?.body,
+        params: options?.params,
+        signal: options?.signal
+      })
+
+      return response.data
+    } catch (error) {
+      if (retries > 0 && this.isRetryable(error)) {
+        await this.delay(1000 * (3 - retries)) // exponential backoff
+        return this.request(method, endpoint, { ...options, retries: retries - 1 })
+      }
+      throw this.transformError(error)
+    }
   }
-  static async findOne(id: string) {
-    const {data} = await api.get<Article>(`articles/${id}`)
-    return data
+
+  private isRetryable(error: any): boolean {
+    return error.response?.status >= 500 || error.code === 'ECONNABORTED'
   }
-  static async create(input: ArticleCreateDto) {
-    const {data} = await api.post<Article>('articles', input)
-    return data
+
+  private transformError(error: any): Error {
+    if (error.response?.status === 404) {
+      return new NotFoundError(error.response.data.message)
+    }
+    if (error.response?.status === 401) {
+      return new UnauthorizedError()
+    }
+    return new ApiError(error.message, error.response?.status)
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  cancelRequest(key: string) {
+    this.abortControllers.get(key)?.abort()
+    this.abortControllers.delete(key)
+  }
+}
+
+// Custom error classes
+class ApiError extends Error {
+  constructor(message: string, public statusCode?: number) {
+    super(message)
+  }
+}
+class NotFoundError extends ApiError {}
+class UnauthorizedError extends ApiError {}
+
+// Generic resource factory
+function createResourceService<T, CreateDto = Partial<T>, UpdateDto = Partial<T>>(
+  resource: string,
+  client = new ApiClient()
+) {
+  return {
+    async findAll(params?: Record<string, any>): Promise<T[]> {
+      return client.request<T[]>('GET', resource, { params, retries: 2 })
+    },
+
+    async findOne(id: string | number): Promise<T> {
+      return client.request<T>('GET', `${resource}/${id}`, { retries: 2 })
+    },
+
+    async create(data: CreateDto): Promise<T> {
+      return client.request<T>('POST', resource, { body: data })
+    },
+
+    async update(id: string | number, data: UpdateDto): Promise<T> {
+      return client.request<T>('PATCH', `${resource}/${id}`, { body: data })
+    },
+
+    async delete(id: string | number): Promise<void> {
+      return client.request<void>('DELETE', `${resource}/${id}`)
+    },
+
+    // Additional useful methods
+    async findByIds(ids: (string | number)[]): Promise<T[]> {
+      return Promise.all(ids.map(id => this.findOne(id)))
+    },
+
+    async exists(id: string | number): Promise<boolean> {
+      try {
+        await this.findOne(id)
+        return true
+      } catch (error) {
+        if (error instanceof NotFoundError) return false
+        throw error
+      }
+    }
+  }
+}
+
+// Usage - much cleaner and more powerful
+const ArticleService = createResourceService<Article, ArticleCreateDto>('articles')
+
+// Or with custom methods if needed
+const EnhancedArticleService = {
+  ...createResourceService<Article, ArticleCreateDto>('articles'),
+
+  async findByAuthor(authorId: string): Promise<Article[]> {
+    return new ApiClient().request<Article[]>('GET', 'articles', {
+      params: { authorId },
+      retries: 2
+    })
+  },
+
+  async publish(id: string): Promise<Article> {
+    return new ApiClient().request<Article>('POST', `articles/${id}/publish`)
   }
 }
 ```
